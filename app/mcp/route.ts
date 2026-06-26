@@ -4,12 +4,11 @@ import { getProductTool } from "../../tools/getProduct";
 
 const handler = createMcpHandler(async (server) => {
   // Register search_products
-  server.registerTool(
+  server.tool(
     searchProductsTool.name,
+    searchProductsTool.description,
     {
-      title: searchProductsTool.title,
-      description: searchProductsTool.description,
-      inputSchema: searchProductsTool.inputSchema.shape,
+      query: searchProductsTool.inputSchema.shape.query,
     },
     async (args: any) => {
       const result = await searchProductsTool.handler(args);
@@ -20,18 +19,21 @@ const handler = createMcpHandler(async (server) => {
             text: JSON.stringify(result, null, 2),
           },
         ],
-        structuredContent: result,
+        _meta: {
+          ui: {
+            resourceUri: "https://ecomjson-mcp.vercel.app/widget",
+          },
+        },
       };
     }
   );
 
   // Register get_product
-  server.registerTool(
+  server.tool(
     getProductTool.name,
+    getProductTool.description,
     {
-      title: getProductTool.title,
-      description: getProductTool.description,
-      inputSchema: getProductTool.inputSchema.shape,
+      productId: getProductTool.inputSchema.shape.productId,
     },
     async (args: any) => {
       const result = await getProductTool.handler(args);
@@ -42,7 +44,11 @@ const handler = createMcpHandler(async (server) => {
             text: JSON.stringify(result, null, 2),
           },
         ],
-        structuredContent: result,
+        _meta: {
+          ui: {
+            resourceUri: "https://ecomjson-mcp.vercel.app/widget",
+          },
+        },
       };
     }
   );
