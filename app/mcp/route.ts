@@ -1,29 +1,64 @@
-import { NextResponse } from 'next/server';
-import { searchProductsSchema, handleSearchProducts } from '../../tools/searchProducts';
-import { getProductSchema, handleGetProduct } from '../../tools/getProduct';
+import { createMcpHandler } from "mcp-handler";
+import { searchProductsTool } from "../../tools/searchProducts";
+import { getProductTool } from "../../tools/getProduct";
 
-// Register tools in a generic MCP HTTP route
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { tool, args } = body;
-
-  try {
-    // Phase 2: search_products
-    if (tool === 'search_products') {
-      const parsedArgs = searchProductsSchema.parse(args);
-      const result = await handleSearchProducts(parsedArgs);
-      return NextResponse.json(result);
+const handler = createMcpHandler(async (server) => {
+  // Register search_products
+  server.registerTool(
+    searchProductsTool.name,
+    {
+      title: searchProductsTool.title,
+      description: searchProductsTool.description,
+      inputSchema: searchProductsTool.inputSchema.shape,
+    },
+    async (args: any) => {
+      const result = await searchProductsTool.handler(args);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        structuredContent: result,
+      };
     }
+  );
 
-    // Phase 3: get_product
-    if (tool === 'get_product') {
-      const parsedArgs = getProductSchema.parse(args);
-      const result = await handleGetProduct(parsedArgs);
-      return NextResponse.json(result);
+  // Register get_product
+  server.registerTool(
+    getProductTool.name,
+    {
+      title: getProductTool.title,
+      description: getProductTool.description,
+      inputSchema: getProductTool.inputSchema.shape,
+    },
+    async (args: any) => {
+      const result = await getProductTool.handler(args);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        structuredContent: result,
+      };
     }
+  );
+});
 
-    return NextResponse.json({ error: 'Unknown tool' }, { status: 404 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+export const GET = handler;
+export const POST = handler;
+
+// Allow CORS for the MCP Inspector browser UI
+export function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 }
